@@ -20,11 +20,20 @@ const App: React.FC = () => {
     timeLeft: TIME_PER_ROUND,
     status: GameStatus.MENU,
     mode: GameMode.CLASSIC,
-    highScore: Number(localStorage.getItem('sumblock_high_score')) || 0,
+    highScore: 0,
   });
 
-  const timerRef = useRef<number | null>(null);
+  // 使用 ReturnType 兼容浏览器和 Node.js 类型定义，防止 tsc 报错
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const t = TRANSLATIONS[lang];
+
+  // 初始化最高分
+  useEffect(() => {
+    const saved = localStorage.getItem('sumblock_high_score');
+    if (saved) {
+      setGameState(prev => ({ ...prev, highScore: Number(saved) }));
+    }
+  }, []);
 
   const generateRandomTarget = useCallback(() => {
     return Math.floor(Math.random() * 21) + 12; // 12 - 32
@@ -50,15 +59,15 @@ const App: React.FC = () => {
       initialGrid = [...initialGrid, ...generateRow(r)];
     }
 
-    setGameState({
+    setGameState(prev => ({
+      ...prev,
       grid: initialGrid,
       score: 0,
       target: generateRandomTarget(),
       timeLeft: TIME_PER_ROUND,
       status: GameStatus.PLAYING,
       mode: mode,
-      highScore: Number(localStorage.getItem('sumblock_high_score')) || 0,
-    });
+    }));
   }, [generateRow, generateRandomTarget]);
 
   const handleTileSelect = (id: string) => {
@@ -75,27 +84,32 @@ const App: React.FC = () => {
       if (currentSum === prev.target) {
         const remainingGrid = updatedGrid.filter(t => !t.isSelected);
         const newScore = prev.score + selectedTiles.length * 10;
+        const newHighScore = Math.max(newScore, prev.highScore);
         
         if (prev.mode === GameMode.CLASSIC) {
           const nextGrid = remainingGrid.map(tile => ({ ...tile, row: tile.row + 1 }));
           const isGameOver = nextGrid.some(tile => tile.row >= ROWS);
-          if (isGameOver) return { ...prev, status: GameStatus.GAMEOVER, grid: nextGrid };
+          if (isGameOver) {
+            localStorage.setItem('sumblock_high_score', newHighScore.toString());
+            return { ...prev, status: GameStatus.GAMEOVER, grid: nextGrid, score: newScore, highScore: newHighScore };
+          }
 
           return {
             ...prev,
             grid: [...nextGrid, ...generateRow(0)],
             score: newScore,
             target: generateRandomTarget(),
-            highScore: Math.max(newScore, prev.highScore)
+            highScore: newHighScore
           };
         } else {
+          localStorage.setItem('sumblock_high_score', newHighScore.toString());
           return {
             ...prev,
             grid: remainingGrid,
             score: newScore,
             target: generateRandomTarget(),
             timeLeft: TIME_PER_ROUND,
-            highScore: Math.max(newScore, prev.highScore)
+            highScore: newHighScore
           };
         }
       } else if (currentSum > prev.target) {
@@ -111,11 +125,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (gameState.status === GameStatus.PLAYING && gameState.mode === GameMode.TIME) {
-      timerRef.current = window.setInterval(() => {
+      timerRef.current = setInterval(() => {
         setGameState(prev => {
           if (prev.timeLeft <= 1) {
             const nextGrid = prev.grid.map(tile => ({ ...tile, row: tile.row + 1 }));
             if (nextGrid.some(tile => tile.row >= ROWS)) {
+              localStorage.setItem('sumblock_high_score', prev.highScore.toString());
               return { ...prev, status: GameStatus.GAMEOVER, grid: nextGrid };
             }
             return {
@@ -132,10 +147,6 @@ const App: React.FC = () => {
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [gameState.status, gameState.mode, generateRow]);
-
-  useEffect(() => {
-    localStorage.setItem('sumblock_high_score', gameState.highScore.toString());
-  }, [gameState.highScore]);
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center p-2 bg-[#f3f4f6] select-none text-slate-800">

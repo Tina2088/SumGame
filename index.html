@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>数块消除 - SumBlock Puzzle</title>
-    <!-- 引入 Tailwind CDN 确保预览立即生效 -->
+    <!-- 引入 Tailwind CDN 确保即时预览生效 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <script>
@@ -33,7 +33,6 @@
       .animate-float {
         animation: float 3s ease-in-out infinite;
       }
-      /* 针对容器的微调 */
       #root {
         height: 100vh;
         width: 100vw;
@@ -53,7 +52,7 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- index.tsx 将由系统自动或通过下方脚本加载 -->
+    <!-- Vite 模式下只需要这个入口 -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
