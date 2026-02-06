@@ -23,11 +23,11 @@ const App: React.FC = () => {
     highScore: 0,
   });
 
-  // 使用 ReturnType 兼容浏览器和 Node.js 类型定义，防止 tsc 报错
+  // Use ReturnType<typeof setInterval> to handle both browser and Node.js types during build
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const t = TRANSLATIONS[lang];
 
-  // 初始化最高分
+  // Initialize high score
   useEffect(() => {
     const saved = localStorage.getItem('sumblock_high_score');
     if (saved) {
